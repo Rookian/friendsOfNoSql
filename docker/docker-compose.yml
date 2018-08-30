@@ -1,0 +1,18 @@
+version: "3.0"
+services: 
+  postgres:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: postgres
+  pgweb:
+    image: sosedoff/pgweb
+    ports: 
+    - "8081:8081" 
+    links: 
+    - postgres:postgres
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/postgres?sslmode=disable
+    depends_on:
+    - postgres
