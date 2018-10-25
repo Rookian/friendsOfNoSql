@@ -24,7 +24,8 @@ namespace FriendsOfNoSql
             var store = DocumentStore.For(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Connection("host=localhost;database=marten_test;password=postgres;username=postgres");
+                _.Connection("host=friendsofnosqlpostgres.postgres.database.azure.com;database=postgres;Port=5432;password=Password123!;username=fo@friendsofnosqlpostgres;SslMode=Require");
+                //_.CreateDatabases = expressions => expressions.ForTenant().WithOwner("fo");
             });
 
             using (var session = store.OpenSession())
@@ -47,7 +48,6 @@ namespace FriendsOfNoSql
 
             using (var session = store.QuerySession())
             {
-
                 var findById = session.Json.FindById<Customer>(1);
                 var hobbies = session.Query<Customer>()
                     .Where(x => x.Hobbies.Any(h => h.Name == "Fischen"))
