@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Marten.Linq.SoftDeletes;
 
 namespace FriendsOfNoSql
 {
@@ -24,12 +25,15 @@ namespace FriendsOfNoSql
             var store = DocumentStore.For(_ =>
             {
                 _.AutoCreateSchemaObjects = AutoCreate.All;
-                _.Connection("host=friendsofnosqlpostgres.postgres.database.azure.com;database=postgres;Port=5432;password=Password123!;username=fo@friendsofnosqlpostgres;SslMode=Require");
+                _.Connection("Server=friendsofnosqlpostgres.postgres.database.azure.com;Database=postgres;Port=5432;User Id=postgres@friendsofnosqlpostgres;Password=Password123!;SslMode=Require;");
                 //_.CreateDatabases = expressions => expressions.ForTenant().WithOwner("fo");
             });
 
+            store.Schema.ApplyAllConfiguredChangesToDatabase();
+
             using (var session = store.OpenSession())
             {
+                
                 var customer = new Customer
                 {
                     Id = 1,
