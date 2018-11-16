@@ -32,10 +32,9 @@ namespace FriendsOfNoSql
 
             var store = DocumentStore.For(_ =>
             {
-                _.AutoCreateSchemaObjects = AutoCreate.All;
+                _.AutoCreateSchemaObjects = AutoCreate.CreateOrUpdate;
                 _.Schema.For<Customer>();
                 _.Connection(ConnectionString);
-                //_.CreateDatabases = expressions => expressions.ForTenant().WithOwner("fo");
             });
             return store;
         }
@@ -48,21 +47,9 @@ namespace FriendsOfNoSql
         {
             var store = StoreFactory.CreateStore();
 
-            store.Schema.WritePatch("1.initial.sql");
-            var sql = store.Schema.ToDDL();
-            Debug.WriteLine(sql);
-            //store.Schema.AssertDatabaseMatchesConfiguration();
             store.Schema.ApplyAllConfiguredChangesToDatabase();
 
-            var migrationsAssembly = typeof(Program).Assembly;
-
-            using (var connection = new NpgsqlConnection(StoreFactory.ConnectionString))
-            {
-                var databaseProvider = new PostgresqlDatabaseProvider(connection);
-                var migrator = new SimpleMigrator(migrationsAssembly, databaseProvider);
-                migrator.Load();
-                migrator.MigrateToLatest();
-            }
+            Migrate();
 
             using (var session = store.OpenSession())
             {
@@ -93,25 +80,46 @@ namespace FriendsOfNoSql
                     .ToCommand().CommandText;
             }
         }
+
+        private static void Migrate()
+        {
+            var migrationsAssembly = typeof(Program).Assembly;
+
+            using (var connection = new NpgsqlConnection(StoreFactory.ConnectionString))
+            {
+                var databaseProvider = new PostgresqlDatabaseProvider(connection);
+                //new SimpleMigrator<X, B>(migrationsAssembly, null);
+                var migrator = new SimpleMigrator(migrationsAssembly, databaseProvider);
+                migrator.Load();
+                migrator.MigrateToLatest();
+            }
+        }
+    }
+
+    public class MartenConnection
+    {
+        public IDocumentSession Session { get; set; }
+    }
+
+    public abstract class MartenMigration : IMigration<MartenConnection>
+    {
+        public void RunMigration(MigrationRunData<MartenConnection> data)
+        {
+            Session = data.Connection.Session;
+
+            Up().GetAwaiter().GetResult();
+        }
+
+        protected IDocumentSession Session { get; set; }
+        protected abstract Task Up();
     }
 
     [Migration(1, "Rename Customer name in Fullname")]
     public class CreateCustomer : Migration
     {
-        private DocumentStore _documentStore;
-
-        public CreateCustomer()
-        {
-            _documentStore = StoreFactory.CreateStore();
-        }
-
         protected override void Up()
         {
-            using (var documentSession = _documentStore.OpenSession())
-            {
-                documentSession.Patch<Customer>(x => true).Rename("", x => x.Name);
-                documentSession.SaveChanges();
-            }
+
         }
 
         protected override void Down()
@@ -124,20 +132,36 @@ namespace FriendsOfNoSql
     [Migration(2, "#2 Rename Customer name in Fullname")]
     public class Bla : Migration
     {
-        private DocumentStore _documentStore;
-
-        public Bla()
-        {
-            _documentStore = StoreFactory.CreateStore();
-        }
-
         protected override void Up()
         {
-            using (var documentSession = _documentStore.OpenSession())
-            {
-                documentSession.Patch<Customer>(x => true).Rename("FullName", x => x.Name);
-                documentSession.SaveChanges();
-            }
+        }
+
+        protected override void Down()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [Migration(4, "#4 Rename Customer name in Fullname")]
+    public class Bla4 : Migration
+    {
+        protected override void Up()
+        {
+            
+        }
+
+        protected override void Down()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    [Migration(3, "#3 Rename Customer name in Fullname")]
+    public class Bla3 : Migration
+    {
+        protected override void Up()
+        {
+
         }
 
         protected override void Down()
